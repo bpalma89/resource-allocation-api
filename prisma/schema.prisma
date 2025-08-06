@@ -1,0 +1,82 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Project {
+  id          String      @id @default(uuid())
+  name        String
+  description String?
+  start_date  DateTime
+  end_date    DateTime
+  status      String
+  created_by  String
+  created_on  DateTime    @default(now())
+  modified_by String?
+  modified_on DateTime?  
+  is_deleted  Boolean     @default(false)
+  positions   Position[]
+}
+
+model Position {
+  id                String       @id @default(uuid())
+  projectId         String
+  project           Project      @relation(fields: [projectId], references: [id])
+  title             String
+  description       String?
+  role              String
+  numberOfResources Int
+  start_date        DateTime
+  end_date          DateTime
+  created_by        String
+  created_on        DateTime     @default(now())
+  modified_by       String?
+  modified_on       DateTime?
+  is_deleted        Boolean      @default(false)
+  allocations       Allocation[]
+}
+
+model Resource {
+  id             String       @id @default(uuid())
+  first_name     String
+  last_name      String
+  birth_date     DateTime
+  role           String
+  availability   String
+  cv_uri         String
+  cv_modified_on DateTime
+  created_by     String
+  created_on     DateTime     @default(now())
+  modified_by    String?
+  modified_on    DateTime?
+  is_deleted     Boolean      @default(false)
+  allocations    Allocation[]
+}
+
+model Allocation {
+  positionId     String
+  resourceId     String
+  position       Position     @relation(fields: [positionId], references: [id])
+  resource       Resource     @relation(fields: [resourceId], references: [id])
+  status         String
+  start_date     DateTime
+  end_date       DateTime
+  created_by     String
+  created_on     DateTime     @default(now())
+  modified_by    String?
+  modified_on    DateTime?
+  is_deleted     Boolean      @default(false)
+
+  @@id([positionId, resourceId]) // Composite primary key
+}
