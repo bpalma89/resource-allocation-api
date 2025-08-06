@@ -1,5 +1,6 @@
 const { PrismaClient } = require('../generated/prisma');
 const prisma = new PrismaClient();
+const { excludeSoftDeleted } = require('../utils/softDeleteUtils');
 
 exports.createProject = async (req, res) => {
   try {
@@ -15,7 +16,7 @@ exports.createProject = async (req, res) => {
 exports.getAllProjects = async (req, res) => {
   try {
     const projects = await prisma.project.findMany({
-      where: { is_deleted: false },
+      where: excludeSoftDeleted(),
     });
     res.json(projects);
   } catch (err) {

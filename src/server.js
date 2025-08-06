@@ -1,14 +1,12 @@
 const express = require('express');
 const app = express();
 const projectRoutes = require('./routes/projectRoutes');
+const positionRoutes = require('./routes/positionRoutes');
 const errorHandler = require('./middleware/errorHandler');
 
 app.use(express.json());
-
-// Routes
 app.use('/projects', projectRoutes);
-
-// Global error handler (after routes)
+app.use('/positions', positionRoutes);
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 3000;
