@@ -2,29 +2,29 @@ const { PrismaClient } = require('../generated/prisma');
 const prisma = new PrismaClient();
 const { excludeSoftDeleted } = require('../utils/softDeleteUtils');
 
-exports.createProject = async (req, res) => {
+exports.createProject = async (req, res, next) => {
   try {
     const project = await prisma.project.create({
       data: req.body,
     });
     res.status(201).json(project);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+  } catch (error) {
+    next(error);
   }
 };
 
-exports.getAllProjects = async (req, res) => {
+exports.getAllProjects = async (req, res, next) => {
   try {
     const projects = await prisma.project.findMany({
       where: excludeSoftDeleted(),
     });
     res.json(projects);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+  } catch (error) {
+    next(error); 
   }
 };
 
-exports.getProjectById = async (req, res) => {
+exports.getProjectById = async (req, res, next) => {
   try {
     const project = await prisma.project.findUnique({
       where: { id: req.params.id },
@@ -33,31 +33,31 @@ exports.getProjectById = async (req, res) => {
       return res.status(404).json({ error: 'Project not found' });
     }
     res.json(project);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+  } catch (error) {
+    next(error);
   }
 };
 
-exports.updateProject = async (req, res) => {
+exports.updateProject = async (req, res, next) => {
   try {
     const project = await prisma.project.update({
       where: { id: req.params.id },
       data: req.body,
     });
     res.json(project);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+  } catch (error) {
+    next(error);
   }
 };
 
-exports.deleteProject = async (req, res) => {
+exports.deleteProject = async (req, res, next) => {
   try {
     const project = await prisma.project.update({
       where: { id: req.params.id },
       data: { is_deleted: true },
     });
     res.json({ message: 'Project deleted (soft)', project });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+  } catch (error) {
+    next(error);
   }
 };
