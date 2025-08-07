@@ -4,7 +4,9 @@ const { excludeSoftDeleted } = require('../utils/softDeleteUtils');
 
 exports.getAllPositions = async (req, res) => {
   try {
-    const positions = await prisma.position.findMany({ where: { is_deleted: false } });
+    const positions = await prisma.position.findMany({
+      where: excludeSoftDeleted(),
+    });
     res.json(positions);
   } catch (error) {
     res.status(500).json({ error: error.message });
