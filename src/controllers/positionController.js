@@ -59,3 +59,27 @@ exports.deletePosition = async (req, res, next) => {
     next(error);
   }
 };
+
+exports.getPositionAllocations = async (req, res, next) => {
+  try {
+    const position = await prisma.position.findUnique({
+      where: { id: req.params.id },
+      include: {
+        allocations: {
+          where: excludeSoftDeleted(),
+          include: {
+            resource: true,
+          },
+        },
+      },
+    });
+
+    if (!position || position.is_deleted) {
+      return res.status(404).json({ error: 'Position not found' });
+    }
+
+    res.json(position.allocations);
+  } catch (error) {
+    next(error);
+  }
+};

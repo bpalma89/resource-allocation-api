@@ -7,5 +7,6 @@ router.get('/:id', resourceController.getResourceById);
 router.post('/', resourceController.createResource);
 router.put('/:id', resourceController.updateResource);
 router.delete('/:id', resourceController.deleteResource);
+router.get('/:id/allocations', resourceController.getResourceAllocations);
 
 module.exports = router;

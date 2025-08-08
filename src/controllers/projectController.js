@@ -61,3 +61,24 @@ exports.deleteProject = async (req, res, next) => {
     next(error);
   }
 };
+
+exports.getProjectPositions = async (req, res, next) => {
+  try {
+    const project = await prisma.project.findUnique({
+      where: { id: req.params.id },
+      include: {
+        positions: {
+          where: excludeSoftDeleted(),
+        },
+      },
+    });
+
+    if (!project || project.is_deleted) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+
+    res.json(project.positions);
+  } catch (error) {
+    next(error);
+  }
+};

@@ -60,3 +60,27 @@ exports.deleteResource = async (req, res, next) => {
     next(error);
   }
 };
+
+exports.getResourceAllocations = async (req, res, next) => {
+  try {
+    const resource = await prisma.resource.findUnique({
+      where: { id: req.params.id },
+      include: {
+        allocations: {
+          where: excludeSoftDeleted(),
+          include: {
+            position: true,
+          },
+        },
+      },
+    });
+
+    if (!resource || resource.is_deleted) {
+      return res.status(404).json({ error: 'Resource not found' });
+    }
+
+    res.json(resource.allocations);
+  } catch (error) {
+    next(error);
+  }
+};
