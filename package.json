@@ -6,9 +6,13 @@
     "prisma": "^6.13.0"
   },
   "devDependencies": {
-    "nodemon": "^3.1.10"
+    "cross-env": "^10.0.0",
+    "jest": "^30.0.5",
+    "nodemon": "^3.1.10",
+    "supertest": "^7.1.4"
   },
   "scripts": {
-    "dev": "nodemon src/server.js"
+    "dev": "nodemon src/server.js",
+    "test": "cross-env NODE_ENV=test jest --detectOpenHandles --forceExit"
   }
 }
