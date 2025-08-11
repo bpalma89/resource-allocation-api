@@ -78,6 +78,14 @@ describe('Allocations API', () => {
         const res = await api.get('/allocations').expect(200);
         expect(res.body).toHaveLength(1);
     });
+
+    test('can get an existing allocation', async () => {
+        const res = await api
+            .get(`/allocations/${global.testData.positionId}/${global.testData.resourceId}`)
+            .expect(200);
+
+        expect(res.body.status).toBe('Assigned');
+    });
 });
 
 afterAll(async () => {

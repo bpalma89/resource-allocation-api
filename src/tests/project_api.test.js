@@ -49,6 +49,73 @@ describe('Projects API', () => {
     const res = await api.get('/projects').expect(200);
     expect(res.body).toHaveLength(1);
   });
+  
+  test('can get a project by ID', async () => {
+    const createdProject = await prisma.project.create({
+        data: {
+        name: 'Project by ID',
+        description: 'Description',
+        start_date: new Date(),
+        end_date: new Date(),
+        status: 'active',
+        created_by: 'test_user',
+        },
+    });
+
+    const res = await api.get(`/projects/${createdProject.id}`).expect(200);
+    expect(res.body.name).toBe('Project by ID');
+  });
+
+  test('can update a project', async () => {
+    const createdProject = await prisma.project.create({
+        data: {
+        name: 'Old Name',
+        description: 'Old description',
+        start_date: new Date(),
+        end_date: new Date(),
+        status: 'active',
+        created_by: 'test_user',
+        },
+    });
+
+    const updatedData = {
+        name: 'Updated Name',
+        description: 'Updated description',
+    };
+
+    const res = await api
+        .put(`/projects/${createdProject.id}`)
+        .send(updatedData)
+        .expect(200);
+
+    expect(res.body.name).toBe(updatedData.name);
+    expect(res.body.description).toBe(updatedData.description);
+  });
+
+  test('can soft delete a project', async () => {
+    const createdProject = await prisma.project.create({
+        data: {
+        name: 'Project to Delete',
+        description: 'To be deleted',
+        start_date: new Date(),
+        end_date: new Date(),
+        status: 'active',
+        created_by: 'test_user',
+        },
+    });
+
+    const res = await api
+        .delete(`/projects/${createdProject.id}`)
+        .expect(200);
+
+    expect(res.body.message).toBe('Project deleted (soft)');
+
+    const deletedProject = await prisma.project.findUnique({
+        where: { id: createdProject.id },
+    });
+
+    expect(deletedProject.is_deleted).toBe(true);
+  });
 });
 
 afterAll(async () => {
