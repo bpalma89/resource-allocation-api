@@ -6,12 +6,34 @@
 
 generator client {
   provider = "prisma-client-js"
-  output   = "../src/generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String    @id @default(uuid())
+  username  String    @unique
+  name      String
+  passwordHash String
+  email     String?   @unique
+  role      String
+  created_on DateTime @default(now())
+  modified_on DateTime?
+
+  createdProjects  Project[]      @relation("ProjectCreatedBy")
+  modifiedProjects Project[]      @relation("ProjectModifiedBy")
+
+  createdPositions Position[]     @relation("PositionCreatedBy")
+  modifiedPositions Position[]    @relation("PositionModifiedBy")
+
+  createdResources Resource[]     @relation("ResourceCreatedBy")
+  modifiedResources Resource[]    @relation("ResourceModifiedBy")
+
+  createdAllocations Allocation[] @relation("AllocationCreatedBy")
+  modifiedAllocations Allocation[] @relation("AllocationModifiedBy")
 }
 
 model Project {
@@ -21,11 +43,16 @@ model Project {
   start_date  DateTime
   end_date    DateTime
   status      String
-  created_by  String
   created_on  DateTime    @default(now())
-  modified_by String?
-  modified_on DateTime?  
+  modified_on DateTime?
   is_deleted  Boolean     @default(false)
+
+  createdById String
+  createdBy   User        @relation("ProjectCreatedBy", fields: [createdById], references: [id])
+
+  modifiedById String?
+  modifiedBy   User?      @relation("ProjectModifiedBy", fields: [modifiedById], references: [id])
+
   positions   Position[]
 }
 
@@ -39,11 +66,16 @@ model Position {
   numberOfResources Int
   start_date        DateTime
   end_date          DateTime
-  created_by        String
   created_on        DateTime     @default(now())
-  modified_by       String?
   modified_on       DateTime?
   is_deleted        Boolean      @default(false)
+
+  createdById String
+  createdBy   User        @relation("PositionCreatedBy", fields: [createdById], references: [id])
+
+  modifiedById String?
+  modifiedBy   User?      @relation("PositionModifiedBy", fields: [modifiedById], references: [id])
+
   allocations       Allocation[]
 }
 
@@ -56,27 +88,37 @@ model Resource {
   availability   String
   cv_uri         String
   cv_modified_on DateTime
-  created_by     String
   created_on     DateTime     @default(now())
-  modified_by    String?
   modified_on    DateTime?
   is_deleted     Boolean      @default(false)
+
+  createdById String
+  createdBy   User        @relation("ResourceCreatedBy", fields: [createdById], references: [id])
+
+  modifiedById String?
+  modifiedBy   User?      @relation("ResourceModifiedBy", fields: [modifiedById], references: [id])
+
   allocations    Allocation[]
 }
 
 model Allocation {
   positionId     String
   resourceId     String
-  position       Position     @relation(fields: [positionId], references: [id])
-  resource       Resource     @relation(fields: [resourceId], references: [id])
   status         String
   start_date     DateTime
   end_date       DateTime
-  created_by     String
   created_on     DateTime     @default(now())
-  modified_by    String?
   modified_on    DateTime?
   is_deleted     Boolean      @default(false)
+
+  position       Position     @relation(fields: [positionId], references: [id])
+  resource       Resource     @relation(fields: [resourceId], references: [id])
+
+  createdById String
+  createdBy   User        @relation("AllocationCreatedBy", fields: [createdById], references: [id])
+
+  modifiedById String?
+  modifiedBy   User?      @relation("AllocationModifiedBy", fields: [modifiedById], references: [id])
 
   @@id([positionId, resourceId]) // Composite primary key
 }
