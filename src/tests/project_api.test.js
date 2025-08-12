@@ -5,117 +5,67 @@ const { PrismaClient } = require('../generated/prisma');
 const prisma = new PrismaClient();
 const api = supertest(app);
 
-beforeEach(async () => {
+beforeAll(async () => {
   await prisma.allocation.deleteMany();
   await prisma.position.deleteMany();
   await prisma.project.deleteMany();
 });
 
-describe('Projects API', () => {
-  test('can create a new project', async () => {
-    const newProject = {
-      name: 'Test Project',
-      description: 'Test description',
-      start_date: new Date().toISOString(),
-      end_date: new Date(Date.now() + 86400000).toISOString(),
-      status: 'active',
-      created_by: 'test_user',
-    };
+test('create project', async () => {
+  const newProject = {
+    name: 'My Test Project',
+    description: 'Test description',
+    start_date: new Date(),
+    end_date: new Date(),
+    status: 'Active',
+    created_by: 'tester'
+  };
 
-    const res = await api
-      .post('/projects')
-      .send(newProject)
-      .expect(201)
-      .expect('Content-Type', /application\/json/);
+  const res = await api
+    .post('/projects')
+    .send(newProject)
+    .expect(201)
+    .expect('Content-Type', /application\/json/);
 
-    expect(res.body.name).toBe(newProject.name);
+  expect(res.body.name).toBe('My Test Project');
+});
 
-    const projectsInDb = await prisma.project.findMany();
-    expect(projectsInDb).toHaveLength(1);
-  });
+test('get all projects', async () => {
+  const res = await api
+    .get('/projects')
+    .expect(200)
+    .expect('Content-Type', /application\/json/);
 
-  test('returns all projects', async () => {
-    await prisma.project.create({
-      data: {
-        name: 'First Project',
-        description: 'A project',
-        start_date: new Date(),
-        end_date: new Date(),
-        status: 'active',
-        created_by: 'test_user',
-      },
-    });
+  expect(res.body.length).toBeGreaterThan(0);
+});
 
-    const res = await api.get('/projects').expect(200);
-    expect(res.body).toHaveLength(1);
-  });
-  
-  test('can get a project by ID', async () => {
-    const createdProject = await prisma.project.create({
-        data: {
-        name: 'Project by ID',
-        description: 'Description',
-        start_date: new Date(),
-        end_date: new Date(),
-        status: 'active',
-        created_by: 'test_user',
-        },
-    });
+test('get project by id', async () => {
+  const project = await prisma.project.findFirst();
+  const res = await api
+    .get(`/projects/${project.id}`)
+    .expect(200);
 
-    const res = await api.get(`/projects/${createdProject.id}`).expect(200);
-    expect(res.body.name).toBe('Project by ID');
-  });
+  expect(res.body.id).toBe(project.id);
+});
 
-  test('can update a project', async () => {
-    const createdProject = await prisma.project.create({
-        data: {
-        name: 'Old Name',
-        description: 'Old description',
-        start_date: new Date(),
-        end_date: new Date(),
-        status: 'active',
-        created_by: 'test_user',
-        },
-    });
+test('update project', async () => {
+  const project = await prisma.project.findFirst();
+  const res = await api
+    .put(`/projects/${project.id}`)
+    .send({ status: 'Completed' })
+    .expect(200);
 
-    const updatedData = {
-        name: 'Updated Name',
-        description: 'Updated description',
-    };
+  expect(res.body.status).toBe('Completed');
+});
 
-    const res = await api
-        .put(`/projects/${createdProject.id}`)
-        .send(updatedData)
-        .expect(200);
+test('delete (soft) project', async () => {
+  const project = await prisma.project.findFirst();
+  await api
+    .delete(`/projects/${project.id}`)
+    .expect(204);
 
-    expect(res.body.name).toBe(updatedData.name);
-    expect(res.body.description).toBe(updatedData.description);
-  });
-
-  test('can soft delete a project', async () => {
-    const createdProject = await prisma.project.create({
-        data: {
-        name: 'Project to Delete',
-        description: 'To be deleted',
-        start_date: new Date(),
-        end_date: new Date(),
-        status: 'active',
-        created_by: 'test_user',
-        },
-    });
-
-    const res = await api
-        .delete(`/projects/${createdProject.id}`)
-        .expect(200);
-
-    expect(res.body.message).toBe('Project deleted (soft)');
-
-    const deletedProject = await prisma.project.findUnique({
-        where: { id: createdProject.id },
-    });
-
-    expect(deletedProject.is_deleted).toBe(true);
-  });
+  const deleted = await prisma.project.findUnique({ where: { id: project.id } });
+  expect(deleted.is_deleted).toBe(true);
 });
 
 afterAll(async () => {

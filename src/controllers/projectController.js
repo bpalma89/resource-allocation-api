@@ -56,7 +56,7 @@ exports.deleteProject = async (req, res, next) => {
       where: { id: req.params.id },
       data: { is_deleted: true },
     });
-    res.json({ message: 'Project deleted (soft)', project });
+    res.status(204).end();
   } catch (error) {
     next(error);
   }

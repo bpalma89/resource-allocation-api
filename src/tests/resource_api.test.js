@@ -10,103 +10,63 @@ beforeAll(async () => {
   await prisma.resource.deleteMany();
 });
 
-describe('Resources API', () => {
-    test('resources can be created', async () => {
-      const newResource = {
-        first_name: 'Alice',
-        last_name: 'Smith',
-        birth_date: new Date('1990-05-01'),
-        role: 'Developer',
-        availability: 'Available',
-        cv_uri: 'http://example.com/cv.pdf',
-        cv_modified_on: new Date(),
-        created_by: 'tester'
-      };
-    
-      await api
-        .post('/resources')
-        .send(newResource)
-        .expect(201)
-        .expect('Content-Type', /application\/json/);
-    
-      const resources = await prisma.resource.findMany();
-      expect(resources).toHaveLength(1);
-      expect(resources[0].first_name).toBe('Alice');
-    });
+test('create resource', async () => {
+  const newResource = {
+    first_name: 'Alice',
+    last_name: 'Smith',
+    birth_date: new Date('1990-05-01'),
+    role: 'Developer',
+    availability: 'Available',
+    cv_uri: 'http://example.com/cv.pdf',
+    cv_modified_on: new Date(),
+    created_by: 'tester'
+  };
 
-    test('returns all resources', async () => {
-        const res = await api.get('/resources').expect(200);
-        expect(res.body).toHaveLength(1);
-    });
+  const res = await api
+    .post('/resources')
+    .send(newResource)
+    .expect(201)
+    .expect('Content-Type', /application\/json/);
 
-    test('can get a resource by ID', async () => {
-        const resource = await prisma.resource.create({
-            data: {
-            first_name: 'Bob',
-            last_name: 'Brown',
-            birth_date: new Date('1985-03-15'),
-            role: 'Tester',
-            availability: 'Available',
-            cv_uri: 'http://example.com/cv-bob.pdf',
-            cv_modified_on: new Date(),
-            created_by: 'tester'
-            },
-        });
+  expect(res.body.first_name).toBe('Alice');
+});
 
-        const res = await api.get(`/resources/${resource.id}`).expect(200);
-        expect(res.body.first_name).toBe('Bob');
-    });
+test('get all resources', async () => {
+  const res = await api
+    .get('/resources')
+    .expect(200)
+    .expect('Content-Type', /application\/json/);
 
-    test('can update a resource', async () => {
-        const resource = await prisma.resource.create({
-            data: {
-            first_name: 'Charlie',
-            last_name: 'Green',
-            birth_date: new Date('1992-07-20'),
-            role: 'Analyst',
-            availability: 'Available',
-            cv_uri: 'http://example.com/cv-charlie.pdf',
-            cv_modified_on: new Date(),
-            created_by: 'tester'
-            },
-        });
+  expect(res.body).toHaveLength(1);
+});
 
-        const updatedData = {
-            role: 'Senior Analyst',
-            availability: 'Unavailable',
-        };
+test('get resource by id', async () => {
+  const resEntity = await prisma.resource.findFirst();
+  const res = await api
+    .get(`/resources/${resEntity.id}`)
+    .expect(200);
 
-        const res = await api
-            .put(`/resources/${resource.id}`)
-            .send(updatedData)
-            .expect(200);
+  expect(res.body.id).toBe(resEntity.id);
+});
 
-        expect(res.body.role).toBe('Senior Analyst');
-        expect(res.body.availability).toBe('Unavailable');
-    });
+test('update resource', async () => {
+  const resEntity = await prisma.resource.findFirst();
+  const res = await api
+    .put(`/resources/${resEntity.id}`)
+    .send({ role: 'Lead Developer' })
+    .expect(200);
 
-    test('can soft delete a resource', async () => {
-        const resource = await prisma.resource.create({
-            data: {
-            first_name: 'Diana',
-            last_name: 'White',
-            birth_date: new Date('1988-11-11'),
-            role: 'Manager',
-            availability: 'Available',
-            cv_uri: 'http://example.com/cv-diana.pdf',
-            cv_modified_on: new Date(),
-            created_by: 'tester'
-            },
-        });
+  expect(res.body.role).toBe('Lead Developer');
+});
 
-        await api.delete(`/resources/${resource.id}`).expect(204);
+test('delete (soft) resource', async () => {
+  const resEntity = await prisma.resource.findFirst();
+  await api
+    .delete(`/resources/${resEntity.id}`)
+    .expect(204);
 
-        const deletedResource = await prisma.resource.findUnique({
-            where: { id: resource.id },
-        });
-
-        expect(deletedResource.is_deleted).toBe(true);
-    });
+  const deleted = await prisma.resource.findUnique({ where: { id: resEntity.id } });
+  expect(deleted.is_deleted).toBe(true);
 });
 
 afterAll(async () => {
