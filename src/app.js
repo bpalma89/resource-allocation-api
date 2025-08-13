@@ -4,6 +4,7 @@ const positionRoutes = require('./routes/positionRoutes');
 const resourceRoutes = require('./routes/resourceRoutes');
 const allocationRoutes = require('./routes/allocationRoutes');
 const userRoutes = require('./routes/userRoutes');
+const loginRoutes = require('./routes/loginRoutes');
 const middleware = require('./utils/middleware')
 
 const app = express();
@@ -16,6 +17,7 @@ app.use('/positions', positionRoutes);
 app.use('/resources', resourceRoutes);
 app.use('/allocations', allocationRoutes);
 app.use('/users', userRoutes);
+app.use('/login', loginRoutes);
 
 app.use(middleware.unknownEndpoint)
 app.use(middleware.errorHandler)

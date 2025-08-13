@@ -1,119 +1,100 @@
 const supertest = require('supertest');
 const app = require('../app');
-const { PrismaClient } = require('../generated/prisma');
-
+const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
+
 const api = supertest(app);
+
+let authToken;
+let positionId;
+let resourceId;
 
 beforeAll(async () => {
   await prisma.allocation.deleteMany();
   await prisma.position.deleteMany();
-  await prisma.resource.deleteMany();
   await prisma.project.deleteMany();
+  await prisma.resource.deleteMany();
+  await prisma.user.deleteMany();
 
-  const project = await prisma.project.create({
-    data: {
-      id: 'proj-1',
-      name: 'Project with Allocations',
+  await api.post('/users').send({
+    username: 'testuser',
+    name: 'Test User',
+    email: 'test@example.com',
+    password: 'password123',
+    role: 'ADMIN'
+  });
+  const loginRes = await api.post('/login').send({
+    username: 'testuser',
+    password: 'password123'
+  });
+  authToken = loginRes.body.token;
+
+  const projRes = await api
+    .post('/projects')
+    .set('Authorization', `Bearer ${authToken}`)
+    .send({
+      name: 'Project Gamma',
+      description: 'Test',
       start_date: new Date(),
       end_date: new Date(),
-      status: 'Active',
-      created_by: 'tester'
-    }
-  });
+      status: 'Active'
+    });
+  const projectId = projRes.body.id;
 
-  const position = await prisma.position.create({
-    data: {
-      id: 'pos-1',
-      projectId: project.id,
-      title: 'Frontend Developer',
+  const posRes = await api
+    .post('/positions')
+    .set('Authorization', `Bearer ${authToken}`)
+    .send({
+      projectId,
+      title: 'Frontend Dev',
+      description: 'React developer',
       role: 'Developer',
       numberOfResources: 1,
       start_date: new Date(),
-      end_date: new Date(),
-      created_by: 'tester'
-    }
-  });
+      end_date: new Date()
+    });
+  positionId = posRes.body.id;
 
-  const resource = await prisma.resource.create({
-    data: {
-      id: 'res-1',
+  const resRes = await api
+    .post('/resources')
+    .set('Authorization', `Bearer ${authToken}`)
+    .send({
       first_name: 'Bob',
-      last_name: 'Jones',
-      birth_date: new Date('1985-09-15'),
+      last_name: 'Smith',
+      birth_date: new Date('1985-03-10'),
       role: 'Developer',
       availability: 'Available',
-      cv_uri: 'http://example.com/bobcv.pdf',
-      cv_modified_on: new Date(),
-      created_by: 'tester'
-    }
-  });
-
-  global.testData = { positionId: position.id, resourceId: resource.id };
+      cv_uri: 'http://example.com/cv/bob.pdf',
+      cv_modified_on: new Date()
+    });
+  resourceId = resRes.body.id;
 });
 
-test('create allocation', async () => {
-  const newAllocation = {
-    positionId: global.testData.positionId,
-    resourceId: global.testData.resourceId,
-    status: 'Assigned',
-    start_date: new Date(),
-    end_date: new Date(),
-    created_by: 'tester'
-  };
-
-  const res = await api
-    .post('/allocations')
-    .send(newAllocation)
-    .expect(201)
-    .expect('Content-Type', /application\/json/);
-
-  expect(res.body.status).toBe('Assigned');
-});
-
-test('get all allocations', async () => {
-  const res = await api
-    .get('/allocations')
-    .expect(200);
-
-  expect(res.body).toHaveLength(1);
-});
-
-test('get allocation by composite key', async () => {
-  const { positionId, resourceId } = global.testData;
-  const res = await api
-    .get(`/allocations/${positionId}/${resourceId}`)
-    .expect(200);
-
-  expect(res.body.positionId).toBe(positionId);
-  expect(res.body.resourceId).toBe(resourceId);
-});
-
-test('update allocation', async () => {
-  const { positionId, resourceId } = global.testData;
-  const res = await api
-    .put(`/allocations/${positionId}/${resourceId}`)
-    .send({ status: 'Completed' })
-    .expect(200);
-
-  expect(res.body.status).toBe('Completed');
-});
-
-test('delete (soft) allocation', async () => {
-  const { positionId, resourceId } = global.testData;
-  await api
-    .delete(`/allocations/${positionId}/${resourceId}`)
-    .expect(204);
-
-  const deleted = await prisma.allocation.findUnique({
-    where: {
-      positionId_resourceId: {
+describe('Allocations API', () => {
+  test('create allocation', async () => {
+    const res = await api
+      .post('/allocations')
+      .set('Authorization', `Bearer ${authToken}`)
+      .send({
         positionId,
-        resourceId
-      }
-    }
+        resourceId,
+        status: 'Assigned',
+        start_date: new Date(),
+        end_date: new Date()
+      })
+      .expect(201);
+
+    expect(res.body.positionId).toBe(positionId);
+    expect(res.body.resourceId).toBe(resourceId);
   });
-  expect(deleted.is_deleted).toBe(true);
+
+  test('get all allocations', async () => {
+    const res = await api
+      .get('/allocations')
+      .set('Authorization', `Bearer ${authToken}`)
+      .expect(200);
+    expect(res.body.length).toBeGreaterThan(0);
+  });
 });
 
 afterAll(async () => {

@@ -9,12 +9,14 @@
   },
   "devDependencies": {
     "cross-env": "^10.0.0",
+    "dotenv-cli": "^10.0.0",
     "jest": "^30.0.5",
     "nodemon": "^3.1.10",
     "supertest": "^7.1.4"
   },
   "scripts": {
     "dev": "nodemon src/server.js",
-    "test": "cross-env NODE_ENV=test jest --detectOpenHandles --forceExit"
+    "test": "cross-env NODE_ENV=test dotenv -e .env.test jest --runInBand",
+    "migrate:test": "cross-env NODE_ENV=test dotenv -e .env.test npx prisma migrate deploy"
   }
 }

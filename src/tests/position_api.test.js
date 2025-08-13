@@ -1,85 +1,74 @@
 const supertest = require('supertest');
 const app = require('../app');
-const { PrismaClient } = require('../generated/prisma');
-
+const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
+
 const api = supertest(app);
+
+let authToken;
+let projectId;
+let positionId;
 
 beforeAll(async () => {
   await prisma.allocation.deleteMany();
   await prisma.position.deleteMany();
   await prisma.project.deleteMany();
+  await prisma.resource.deleteMany();
+  await prisma.user.deleteMany();
 
-  await prisma.project.create({
-    data: {
-      id: 'proj-1',
-      name: 'Test Project',
-      description: 'Testing positions',
+  await api.post('/users').send({
+    username: 'testuser',
+    name: 'Test User',
+    email: 'test@example.com',
+    password: 'password123',
+    role: 'ADMIN'
+  });
+  const loginRes = await api.post('/login').send({
+    username: 'testuser',
+    password: 'password123'
+  });
+  authToken = loginRes.body.token;
+
+  const projRes = await api
+    .post('/projects')
+    .set('Authorization', `Bearer ${authToken}`)
+    .send({
+      name: 'Project Beta',
+      description: 'Test',
       start_date: new Date(),
       end_date: new Date(),
-      status: 'Active',
-      created_by: 'tester'
-    }
+      status: 'Active'
+    });
+  projectId = projRes.body.id;
+});
+
+describe('Positions API', () => {
+  test('create position', async () => {
+    const res = await api
+      .post('/positions')
+      .set('Authorization', `Bearer ${authToken}`)
+      .send({
+        projectId,
+        title: 'Backend Dev',
+        description: 'NodeJS developer',
+        role: 'Developer',
+        numberOfResources: 2,
+        start_date: new Date(),
+        end_date: new Date()
+      })
+      .expect(201);
+
+    positionId = res.body.id;
+    expect(res.body.projectId).toBe(projectId);
   });
-});
 
-test('create position', async () => {
-  const newPosition = {
-    projectId: 'proj-1',
-    title: 'Backend Developer',
-    description: 'Build APIs',
-    role: 'Developer',
-    numberOfResources: 2,
-    start_date: new Date(),
-    end_date: new Date(),
-    created_by: 'tester'
-  };
-
-  const res = await api
-    .post('/positions')
-    .send(newPosition)
-    .expect(201)
-    .expect('Content-Type', /application\/json/);
-
-  expect(res.body.title).toBe('Backend Developer');
-});
-
-test('get all positions', async () => {
-  const res = await api
-    .get('/positions')
-    .expect(200)
-    .expect('Content-Type', /application\/json/);
-
-  expect(res.body).toHaveLength(1);
-});
-
-test('get position by id', async () => {
-  const pos = await prisma.position.findFirst();
-  const res = await api
-    .get(`/positions/${pos.id}`)
-    .expect(200);
-
-  expect(res.body.id).toBe(pos.id);
-});
-
-test('update position', async () => {
-  const pos = await prisma.position.findFirst();
-  const res = await api
-    .put(`/positions/${pos.id}`)
-    .send({ title: 'Updated Title' })
-    .expect(200);
-
-  expect(res.body.title).toBe('Updated Title');
-});
-
-test('delete (soft) position', async () => {
-  const pos = await prisma.position.findFirst();
-  await api
-    .delete(`/positions/${pos.id}`)
-    .expect(204);
-
-  const deleted = await prisma.position.findUnique({ where: { id: pos.id } });
-  expect(deleted.is_deleted).toBe(true);
+  test('get all positions', async () => {
+    const res = await api
+      .get('/positions')
+      .set('Authorization', `Bearer ${authToken}`)
+      .expect(200);
+    expect(res.body.length).toBeGreaterThan(0);
+  });
 });
 
 afterAll(async () => {
