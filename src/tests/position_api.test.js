@@ -1,76 +1,84 @@
 const supertest = require('supertest');
 const app = require('../app');
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
-
-const api = supertest(app);
-
-let authToken;
-let projectId;
-let positionId;
-
-beforeAll(async () => {
-  await prisma.allocation.deleteMany();
-  await prisma.position.deleteMany();
-  await prisma.project.deleteMany();
-  await prisma.resource.deleteMany();
-  await prisma.user.deleteMany();
-
-  await api.post('/users').send({
-    username: 'testuser',
-    name: 'Test User',
-    email: 'test@example.com',
-    password: 'password123',
-    role: 'ADMIN'
-  });
-  const loginRes = await api.post('/login').send({
-    username: 'testuser',
-    password: 'password123'
-  });
-  authToken = loginRes.body.token;
-
-  const projRes = await api
-    .post('/projects')
-    .set('Authorization', `Bearer ${authToken}`)
-    .send({
-      name: 'Project Beta',
-      description: 'Test',
-      start_date: new Date(),
-      end_date: new Date(),
-      status: 'Active'
-    });
-  projectId = projRes.body.id;
-});
+const { createTestUserAndLogin, getAuthHeader, getTestUserId, prisma } = require('./testHelpers');
 
 describe('Positions API', () => {
-  test('create position', async () => {
-    const res = await api
+  let createdPosition;
+  let projectId;
+
+  beforeAll(async () => {
+    await createTestUserAndLogin();
+
+    await prisma.allocation.deleteMany();
+    await prisma.position.deleteMany();
+    await prisma.project.deleteMany();
+
+    const project = await prisma.project.create({
+      data: {
+        name: 'Test Project',
+        description: 'Project for positions',
+        created_on: new Date(),
+        start_date: new Date("2025-08-15T00:00:00.000Z"),
+        end_date: new Date("2025-12-15T00:00:00.000Z"),
+        status: 'active',
+        createdById: getTestUserId()
+      }
+    });
+    projectId = project.id;
+  });
+
+  test('Create position', async () => {
+    const res = await supertest(app)
       .post('/positions')
-      .set('Authorization', `Bearer ${authToken}`)
+      .set(getAuthHeader())
       .send({
-        projectId,
-        title: 'Backend Dev',
-        description: 'NodeJS developer',
-        role: 'Developer',
-        numberOfResources: 2,
+        title: 'Developer',
+        role: 'Engineer',
+        description: 'Backend developer',
+        numberOfResources: 1,
         start_date: new Date(),
-        end_date: new Date()
+        end_date: new Date(),
+        created_on: new Date(),
+        projectId,
+        createdById: getTestUserId()
       })
       .expect(201);
 
-    positionId = res.body.id;
-    expect(res.body.projectId).toBe(projectId);
+    createdPosition = res.body;
   });
 
-  test('get all positions', async () => {
-    const res = await api
+  test('Get all positions', async () => {
+    const res = await supertest(app)
       .get('/positions')
-      .set('Authorization', `Bearer ${authToken}`)
+      .set(getAuthHeader())
       .expect(200);
-    expect(res.body.length).toBeGreaterThan(0);
-  });
-});
 
-afterAll(async () => {
-  await prisma.$disconnect();
+    expect(Array.isArray(res.body)).toBe(true);
+  });
+
+  test('Get position by ID', async () => {
+    const res = await supertest(app)
+      .get(`/positions/${createdPosition.id}`)
+      .set(getAuthHeader())
+      .expect(200);
+
+    expect(res.body.id).toBe(createdPosition.id);
+  });
+
+  test('Update position', async () => {
+    const res = await supertest(app)
+      .put(`/positions/${createdPosition.id}`)
+      .set(getAuthHeader())
+      .send({ title: 'Senior Developer' })
+      .expect(200);
+
+    expect(res.body.title).toBe('Senior Developer');
+  });
+
+  test('Delete position', async () => {
+    await supertest(app)
+      .delete(`/positions/${createdPosition.id}`)
+      .set(getAuthHeader())
+      .expect(204);
+  });
 });

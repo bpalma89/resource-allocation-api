@@ -120,5 +120,5 @@ model Allocation {
   modifiedById String?
   modifiedBy   User?      @relation("AllocationModifiedBy", fields: [modifiedById], references: [id])
 
-  @@id([positionId, resourceId]) // Composite primary key
+  @@id([positionId, resourceId])
 }

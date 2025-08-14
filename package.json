@@ -17,6 +17,10 @@
   "scripts": {
     "dev": "nodemon src/server.js",
     "test": "cross-env NODE_ENV=test dotenv -e .env.test jest --runInBand",
+    "test:projects": "jest src/tests/project_api.test.js",
+    "test:positions": "jest src/tests/position_api.test.js",
+    "test:resources": "jest src/tests/resource_api.test.js",
+    "test:allocations": "jest src/tests/allocation_api.test.js",
     "migrate:test": "cross-env NODE_ENV=test dotenv -e .env.test npx prisma migrate deploy"
   }
 }

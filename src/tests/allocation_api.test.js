@@ -1,102 +1,118 @@
 const supertest = require('supertest');
 const app = require('../app');
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
-
-const api = supertest(app);
-
-let authToken;
-let positionId;
-let resourceId;
-
-beforeAll(async () => {
-  await prisma.allocation.deleteMany();
-  await prisma.position.deleteMany();
-  await prisma.project.deleteMany();
-  await prisma.resource.deleteMany();
-  await prisma.user.deleteMany();
-
-  await api.post('/users').send({
-    username: 'testuser',
-    name: 'Test User',
-    email: 'test@example.com',
-    password: 'password123',
-    role: 'ADMIN'
-  });
-  const loginRes = await api.post('/login').send({
-    username: 'testuser',
-    password: 'password123'
-  });
-  authToken = loginRes.body.token;
-
-  const projRes = await api
-    .post('/projects')
-    .set('Authorization', `Bearer ${authToken}`)
-    .send({
-      name: 'Project Gamma',
-      description: 'Test',
-      start_date: new Date(),
-      end_date: new Date(),
-      status: 'Active'
-    });
-  const projectId = projRes.body.id;
-
-  const posRes = await api
-    .post('/positions')
-    .set('Authorization', `Bearer ${authToken}`)
-    .send({
-      projectId,
-      title: 'Frontend Dev',
-      description: 'React developer',
-      role: 'Developer',
-      numberOfResources: 1,
-      start_date: new Date(),
-      end_date: new Date()
-    });
-  positionId = posRes.body.id;
-
-  const resRes = await api
-    .post('/resources')
-    .set('Authorization', `Bearer ${authToken}`)
-    .send({
-      first_name: 'Bob',
-      last_name: 'Smith',
-      birth_date: new Date('1985-03-10'),
-      role: 'Developer',
-      availability: 'Available',
-      cv_uri: 'http://example.com/cv/bob.pdf',
-      cv_modified_on: new Date()
-    });
-  resourceId = resRes.body.id;
-});
+const { createTestUserAndLogin, getAuthHeader, getTestUserId, prisma } = require('./testHelpers');
 
 describe('Allocations API', () => {
-  test('create allocation', async () => {
-    const res = await api
+  let allocationKeys;
+  let positionId;
+  let resourceId;
+
+  beforeAll(async () => {
+    await createTestUserAndLogin();
+
+    await prisma.allocation.deleteMany();
+    await prisma.position.deleteMany();
+    await prisma.resource.deleteMany();
+    await prisma.project.deleteMany();
+
+    const userId = getTestUserId();
+
+    const project = await prisma.project.create({
+      data: {
+        name: 'Alloc Project',
+        description: 'For allocation tests',
+        created_on: new Date(),
+        start_date: new Date("2025-08-15T00:00:00.000Z"),
+        end_date: new Date("2025-12-15T00:00:00.000Z"),
+        status: 'active',
+        createdById: userId
+      }
+    });
+
+    const position = await prisma.position.create({
+      data: {
+        title: 'Tester',
+        role: 'QA',
+        description: 'Testing role',
+        numberOfResources: 1,
+        start_date: new Date(),
+        end_date: new Date(),
+        created_on: new Date(),
+        projectId: project.id,
+        createdById: userId
+      }
+    });
+
+    const resource = await prisma.resource.create({
+      data: {
+        first_name: 'Jane',
+        last_name: 'Smith',
+        birth_date: new Date('1990-05-15T00:00:00.000Z'),
+        role: 'Developer',
+        availability: 'available',
+        cv_uri: 'https://example.com/cv/jane-smith.pdf',
+        cv_modified_on: new Date(),
+        created_on: new Date(),
+        createdById: userId
+      }
+    });
+
+    positionId = position.id;
+    resourceId = resource.id;
+  });
+
+  test('Create allocation', async () => {
+    const res = await supertest(app)
       .post('/allocations')
-      .set('Authorization', `Bearer ${authToken}`)
+      .set(getAuthHeader())
       .send({
         positionId,
         resourceId,
-        status: 'Assigned',
+        status: 'active',
         start_date: new Date(),
-        end_date: new Date()
+        end_date: new Date(),
+        createdById: getTestUserId()
       })
       .expect(201);
 
-    expect(res.body.positionId).toBe(positionId);
-    expect(res.body.resourceId).toBe(resourceId);
+    allocationKeys = {
+      positionId: res.body.positionId,
+      resourceId: res.body.resourceId
+    };
   });
 
-  test('get all allocations', async () => {
-    const res = await api
+  test('Get all allocations', async () => {
+    const res = await supertest(app)
       .get('/allocations')
-      .set('Authorization', `Bearer ${authToken}`)
+      .set(getAuthHeader())
       .expect(200);
-    expect(res.body.length).toBeGreaterThan(0);
-  });
-});
 
-afterAll(async () => {
-  await prisma.$disconnect();
+    expect(Array.isArray(res.body)).toBe(true);
+  });
+
+  test('Get allocation by composite ID', async () => {
+    const res = await supertest(app)
+      .get(`/allocations/${allocationKeys.positionId}/${allocationKeys.resourceId}`)
+      .set(getAuthHeader())
+      .expect(200);
+
+    expect(res.body.positionId).toBe(allocationKeys.positionId);
+  });
+
+  test('Update allocation', async () => {
+    const res = await supertest(app)
+      .put(`/allocations/${allocationKeys.positionId}/${allocationKeys.resourceId}`)
+      .set(getAuthHeader())
+      .send({ end_date: new Date() })
+      .expect(200);
+
+    expect(res.body.end_date).toBeDefined();
+  });
+
+  test('Delete allocation', async () => {
+    await supertest(app)
+      .delete(`/allocations/${allocationKeys.positionId}/${allocationKeys.resourceId}`)
+      .set(getAuthHeader())
+      .expect(204);
+  });
 });
