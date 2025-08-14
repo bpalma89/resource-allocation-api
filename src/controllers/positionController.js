@@ -1,6 +1,7 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 const { excludeSoftDeleted } = require('../utils/softDeleteUtils');
+const { validateExists } = require('../utils/validator');
 
 exports.getAllPositions = async (req, res, next) => {
   try {
@@ -28,6 +29,9 @@ exports.createPosition = async (req, res, next) => {
       createdById: req.user.id,
       created_on: new Date(),
     };
+
+    await validateExists('project', req.body.projectId, 'Project');
+
     const position = await prisma.position.create({ data });
     res.status(201).json(position);
   } catch (err) {

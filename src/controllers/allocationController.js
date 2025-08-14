@@ -1,6 +1,7 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 const { excludeSoftDeleted } = require('../utils/softDeleteUtils');
+const { validateExists } = require('../utils/validator');
 
 exports.getAllAllocations = async (req, res, next) => {
   try {
@@ -35,6 +36,10 @@ exports.createAllocation = async (req, res, next) => {
       createdById: req.user.id,
       created_on: new Date(),
     };
+
+    await validateExists('position', req.body.positionId, 'Position');
+    await validateExists('resource', req.body.resourceId, 'Resource');
+
     const allocation = await prisma.allocation.create({ data });
     res.status(201).json(allocation);
   } catch (err) {
