@@ -1,15 +1,12 @@
-const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const userService = require('../services/userService');
 
 exports.login = async (req, res, next) => {
   try {
     const { username, password } = req.body;
-    const user = await prisma.user.findUnique({ where: { username } });
+    const user = await userService.authenticateUser(username, password);
 
-    const passwordCorrect = user && await bcrypt.compare(password, user.passwordHash);
-    if (!passwordCorrect) {
+    if (!user) {
       return res.status(401).json({ error: 'Invalid username or password' });
     }
 
