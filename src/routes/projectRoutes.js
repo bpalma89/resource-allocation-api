@@ -10,5 +10,6 @@ router.get('/:id', auth, authorizeRoles(ROLES.ADMIN, ROLES.EDITOR, ROLES.VIEWER)
 router.post('/', auth, authorizeRoles(ROLES.ADMIN, ROLES.EDITOR), projectController.createProject);
 router.put('/:id', auth, authorizeRoles(ROLES.ADMIN, ROLES.EDITOR), projectController.updateProject);
 router.delete('/:id', auth, authorizeRoles(ROLES.ADMIN), projectController.deleteProject);
+router.get('/:id/positions', auth, authorizeRoles(ROLES.ADMIN, ROLES.EDITOR, ROLES.VIEWER), projectController.getProjectPositions);
 
 module.exports = router;

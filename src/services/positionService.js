@@ -66,3 +66,17 @@ exports.updatePosition = async (id, data) => {
 exports.deletePosition = (id, data) => {
   return prisma.position.update({ where: { id }, data });
 };
+
+exports.getPositionAllocations = (id) => {
+  return prisma.position.findUnique({
+      where: { id },
+      include: {
+        allocations: {
+          where: excludeSoftDeleted(),
+          include: {
+            resource: true,
+          },
+        },
+      },
+    });
+};

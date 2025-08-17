@@ -56,3 +56,14 @@ exports.updateProject = async (id, data) => {
 exports.deleteProject = (id, data) => {
   return prisma.project.update({ where: { id }, data });
 };
+
+exports.getProjectPositions = (id) => {
+  return prisma.project.findUnique({
+      where: { id },
+      include: {
+        positions: {
+          where: excludeSoftDeleted(),
+        },
+      },
+    });
+};

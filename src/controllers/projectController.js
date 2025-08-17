@@ -38,3 +38,17 @@ exports.deleteProject = async (req, res, next) => {
     res.status(204).end();
   } catch (err) { next(err); }
 };
+
+exports.getProjectPositions = async (req, res, next) => {
+  try {
+    const project = await projectService.getProjectPositions(req.params.id);
+
+    if (!project || project.is_deleted) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+
+    res.json(project.positions);
+  } catch (error) {
+    next(error);
+  }
+};
