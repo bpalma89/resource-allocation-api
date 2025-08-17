@@ -2,7 +2,7 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 const { excludeSoftDeleted } = require('../utils/softDeleteUtils');
-const { validateExists } = require('../utils/validator');
+const { validateExists, validateDateRange } = require('../utils/validationUtils');
 
 exports.getAllAllocations = () => {
   return prisma.allocation.findMany({ where: excludeSoftDeleted() });
@@ -31,6 +31,8 @@ exports.createAllocation = async (data) => {
     error.statusCode = 400;
     throw error;
   }
+
+  validateDateRange(data.start_date, data.end_date);
 
   return prisma.allocation.create({ data });
 };
@@ -61,6 +63,10 @@ exports.updateAllocation = async (positionId, resourceId, data) => {
       error.statusCode = 400;
       throw error;
     }
+  }
+
+  if (data.start_date && data.end_date) {
+    validateDateRange(data.start_date, data.end_date);
   }
 
   return prisma.allocation.update({

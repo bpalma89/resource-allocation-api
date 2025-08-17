@@ -2,6 +2,7 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 const { excludeSoftDeleted } = require('../utils/softDeleteUtils');
+const { validateExists, validateDateRange } = require('../utils/validationUtils');
 
 exports.getAllPositions = () => {
   return prisma.position.findMany({ where: excludeSoftDeleted() });
@@ -12,6 +13,9 @@ exports.getPositionById = (id) => {
 };
 
 exports.createPosition = async (data) => {
+
+  await validateExists('project', data.projectId, 'Project');
+
   const exists = await prisma.position.findFirst({
     where: {
       projectId: data.projectId,
@@ -26,10 +30,17 @@ exports.createPosition = async (data) => {
     throw error;
   }
 
+  validateDateRange(data.start_date, data.end_date);
+
   return prisma.position.create({ data });
 };
 
 exports.updatePosition = async (id, data) => {
+
+  if(data.projectId){
+    await validateExists('project', data.projectId, 'Project');
+  }
+
   const exists = await prisma.position.findFirst({
     where: {
       projectId: data.projectId,
@@ -43,6 +54,10 @@ exports.updatePosition = async (id, data) => {
     const error = new Error("A position with this title already exists in the project");
     error.statusCode = 400;
     throw error;
+  }
+
+  if (data.start_date && data.end_date) {
+    validateDateRange(data.start_date, data.end_date);
   }
 
   return prisma.position.update({ where: { id }, data });

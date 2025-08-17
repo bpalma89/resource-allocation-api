@@ -2,7 +2,7 @@ const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcrypt');
 const prisma = new PrismaClient();
 
-const { isValidRole } = require('../utils/validator');
+const { validateEmail, validateNotEmpty, isValidRole } = require('../utils/validationUtils');
 
 exports.getAllUsers = () => {
   return prisma.user.findMany({
@@ -17,6 +17,14 @@ exports.getAllUsers = () => {
 };
 
 exports.createUser = async ({ username, name, email, password, role }) => {
+
+  validateNotEmpty('Username', username);
+  validateNotEmpty('Name', name);
+
+  if(email){
+    validateEmail(email);
+  }
+
   if (!isValidRole(role)) {
     const error = new Error(`Invalid role. Allowed roles are: admin, editor, viewer.`);
     error.statusCode = 400;

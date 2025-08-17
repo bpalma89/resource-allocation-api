@@ -2,6 +2,7 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 const { excludeSoftDeleted } = require('../utils/softDeleteUtils');
+const { validateDateRange } = require('../utils/validationUtils');
 
 exports.getAllProjects = () => {
   return prisma.project.findMany({ where: excludeSoftDeleted() });
@@ -25,6 +26,8 @@ exports.createProject = async (data) => {
     throw error;
   }
 
+  validateDateRange(data.start_date, data.end_date);
+
   return prisma.project.create({ data });
 };
 
@@ -41,6 +44,10 @@ exports.updateProject = async (id, data) => {
     if (existing) {
       throw new Error('Another project with this name already exists');
     }
+  }
+
+  if (data.start_date && data.end_date) {
+    validateDateRange(data.start_date, data.end_date);
   }
 
   return prisma.project.update({ where: { id }, data });

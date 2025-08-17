@@ -1,5 +1,4 @@
 const positionService = require('../services/positionService');
-const { validateExists } = require('../utils/validator');
 
 exports.getAllPositions = async (req, res, next) => {
   try {
@@ -19,7 +18,6 @@ exports.getPositionById = async (req, res, next) => {
 exports.createPosition = async (req, res, next) => {
   try {
     const data = { ...req.body, createdById: req.user.id, created_on: new Date() };
-    await validateExists('project', req.body.projectId, 'Project');
     const item = await positionService.createPosition(data);
     res.status(201).json(item);
   } catch (err) { next(err); }

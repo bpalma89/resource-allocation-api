@@ -2,6 +2,7 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 const { excludeSoftDeleted } = require('../utils/softDeleteUtils');
+const { validateBirthday } = require('../utils/validationUtils');
 
 exports.getAllResources = () => {
   return prisma.resource.findMany({ where: excludeSoftDeleted() });
@@ -32,6 +33,8 @@ exports.createResource = async (data) => {
     throw error;
   }
 
+  validateBirthday(data.birth_date);
+
   return prisma.resource.create({ data });
 };
 
@@ -55,6 +58,10 @@ exports.updateResource = async (id, data) => {
     const error = new Error("A resource with the same CV or identity already exists");
     error.statusCode = 400;
     throw error;
+  }
+
+  if(data.birth_date){
+    validateBirthday(data.birth_date);
   }
 
   return prisma.resource.update({ where: { id }, data });
