@@ -11,11 +11,52 @@ exports.getResourceById = (id) => {
   return prisma.resource.findUnique({ where: { id } });
 };
 
-exports.createResource = (data) => {
+exports.createResource = async (data) => {
+  const exists = await prisma.resource.findFirst({
+    where: {
+      OR: [
+        { cv_uri: data.cv_uri, is_deleted: false },
+        { 
+          first_name: data.first_name, 
+          last_name: data.last_name, 
+          birth_date: data.birth_date, 
+          is_deleted: false 
+        }
+      ]
+    }
+  });
+
+  if (exists) {
+    const error = new Error("A resource with the same CV or identity already exists");
+    error.statusCode = 400;
+    throw error;
+  }
+
   return prisma.resource.create({ data });
 };
 
-exports.updateResource = (id, data) => {
+exports.updateResource = async (id, data) => {
+  const exists = await prisma.resource.findFirst({
+    where: {
+      OR: [
+        { cv_uri: data.cv_uri, is_deleted: false },
+        { 
+          first_name: data.first_name, 
+          last_name: data.last_name, 
+          birth_date: data.birth_date, 
+          is_deleted: false 
+        }
+      ],
+      NOT: { id }
+    }
+  });
+
+  if (exists) {
+    const error = new Error("A resource with the same CV or identity already exists");
+    error.statusCode = 400;
+    throw error;
+  }
+
   return prisma.resource.update({ where: { id }, data });
 };
 

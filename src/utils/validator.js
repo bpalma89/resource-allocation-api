@@ -11,25 +11,7 @@ function isValidRole(role) {
   return Object.values(ROLES).includes(role);
 }
 
-async function validateAllocationUniqueness(positionId, resourceId) {
-  const existing = await prisma.allocation.findUnique({
-    where: {
-      positionId_resourceId: {
-        positionId,
-        resourceId,
-      },
-    },
-  });
-
-  if (existing && !existing.is_deleted) {
-    const error = new Error('An allocation with this position and resource already exists.');
-    error.status = 400;
-    throw error;
-  }
-}
-
 module.exports = { 
   validateExists, 
-  isValidRole,
-  validateAllocationUniqueness
+  isValidRole
 }

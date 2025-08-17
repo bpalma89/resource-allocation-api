@@ -1,5 +1,4 @@
 const allocationService = require('../services/allocationService');
-const { validateExists, validateAllocationUniqueness  } = require('../utils/validator');
 
 exports.getAllAllocations = async (req, res, next) => {
   try {
@@ -20,11 +19,6 @@ exports.getAllocation = async (req, res, next) => {
 exports.createAllocation = async (req, res, next) => {
   try {
     const data = { ...req.body, createdById: req.user.id, created_on: new Date() };
-
-    await validateExists('position', req.body.positionId, 'Position');
-    await validateExists('resource', req.body.resourceId, 'Resource');
-    await validateAllocationUniqueness(req.body.positionId, req.body.resourceId);
-    
     const item = await allocationService.createAllocation(data);
     res.status(201).json(item);
   } catch (err) { next(err); }
@@ -33,15 +27,6 @@ exports.createAllocation = async (req, res, next) => {
 exports.updateAllocation = async (req, res, next) => {
   try {
     const { positionId, resourceId } = req.params;
-    const { positionId: newPositionId, resourceId: newResourceId } = req.body;
-
-    const isChangingKey = newPositionId && newResourceId &&
-      (newPositionId !== positionId || newResourceId !== resourceId);
-
-    if (isChangingKey) {
-      await validateAllocationUniqueness(newPositionId, newResourceId);
-    }
-
     const data = { ...req.body, modifiedById: req.user.id, modified_on: new Date() };
     const item = await allocationService.updateAllocation(positionId, resourceId, data);
     res.json(item);
