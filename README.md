@@ -1,7 +1,6 @@
 # Resource Allocation API
 
-A RESTful API built with **Node.js**, **Express**, and **Prisma ORM** to manage projects, positions, resources, allocations, and users.  
-Includes authentication (JWT), role-based authorization, soft deletes, and validation rules.
+This RESTful API is built with **Node.js**, **Express** and **Prisma ORM** to provide full lifecycle management of projects, positions, resources, allocations, and users. It implements JWT-based authentication, role-based access control (RBAC), soft delete functionality, and schema-driven validation to ensure secure and consistent data handling.
 
 ---
 
