@@ -9,7 +9,7 @@ This RESTful API is built with **Node.js**, **Express** and **Prisma ORM** to pr
 The project uses the following main dependencies:
 
 - **express** → HTTP server framework for building routes and controllers.
-- **@prisma/client** → Database ORM for PostgreSQL/MySQL/SQLite.
+- **@prisma/client** → Auto-generated query builder that enables type-safe database access and reduces boilerplate.
 - **bcrypt** → Password hashing for user authentication.
 - **jsonwebtoken** → Generating and verifying JWTs for authentication.
 - **dotenv** → Loads environment variables from `.env`.
@@ -28,7 +28,7 @@ The project uses the following main dependencies:
 ### Steps
 1. Clone the repo:
    ```bash
-   git clone https://github.com/your-username/resource-management-api.git
+   git clone https://github.com/bpalma89/resource-allocation-api.git
    cd resource-management-api
    ```
 
