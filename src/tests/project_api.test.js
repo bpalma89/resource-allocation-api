@@ -23,8 +23,8 @@ describe('Projects API', () => {
       .send({
         name: 'Project Alpha',
         description: 'Test project',
-        start_date: new Date(),
-        end_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        start_date: "2025-09-01T00:00:00.000Z",
+        end_date: "2025-12-31T00:00:00.000Z",
         status: 'active',
         createdById: testUser.id
       });

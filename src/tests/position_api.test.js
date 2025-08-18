@@ -18,8 +18,8 @@ describe('Positions API', () => {
         name: 'Test Project',
         description: 'Project for positions',
         created_on: new Date(),
-        start_date: new Date("2025-08-15T00:00:00.000Z"),
-        end_date: new Date("2025-12-15T00:00:00.000Z"),
+        start_date: "2025-09-01T00:00:00.000Z",
+        end_date: "2025-12-31T00:00:00.000Z",
         status: 'active',
         createdById: getTestUserId()
       }
@@ -36,8 +36,8 @@ describe('Positions API', () => {
         role: 'Engineer',
         description: 'Backend developer',
         numberOfResources: 1,
-        start_date: new Date(),
-        end_date: new Date(),
+        start_date: "2025-09-01T00:00:00.000Z",
+        end_date: "2025-12-31T00:00:00.000Z",
         created_on: new Date(),
         projectId,
         createdById: getTestUserId()

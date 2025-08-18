@@ -22,8 +22,8 @@ describe('Allocations API', () => {
         name: 'Alloc Project',
         description: 'For allocation tests',
         created_on: new Date(),
-        start_date: new Date("2025-08-15T00:00:00.000Z"),
-        end_date: new Date("2025-12-15T00:00:00.000Z"),
+        start_date: "2025-09-01T00:00:00.000Z",
+        end_date: "2025-12-31T00:00:00.000Z",
         status: 'active',
         createdById: userId
       }
@@ -35,8 +35,8 @@ describe('Allocations API', () => {
         role: 'QA',
         description: 'Testing role',
         numberOfResources: 1,
-        start_date: new Date(),
-        end_date: new Date(),
+        start_date: "2025-09-01T00:00:00.000Z",
+        end_date: "2025-12-31T00:00:00.000Z",
         created_on: new Date(),
         projectId: project.id,
         createdById: userId
@@ -69,8 +69,8 @@ describe('Allocations API', () => {
         positionId,
         resourceId,
         status: 'active',
-        start_date: new Date(),
-        end_date: new Date(),
+        start_date: "2025-09-01T00:00:00.000Z",
+        end_date: "2025-12-31T00:00:00.000Z",
         createdById: getTestUserId()
       })
       .expect(201);
