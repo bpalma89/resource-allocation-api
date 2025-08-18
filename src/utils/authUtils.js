@@ -2,7 +2,7 @@ const jwt = require('jsonwebtoken');
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-const authMiddleware = async (req, res, next) => {
+const authenticateUser = async (req, res, next) => {
   const authorization = req.get('authorization');
   if (!authorization || !authorization.toLowerCase().startsWith('bearer ')) {
     return res.status(401).json({ error: 'Token missing or invalid' });
@@ -28,4 +28,19 @@ const authMiddleware = async (req, res, next) => {
   }
 };
 
-module.exports = authMiddleware;
+function authorizeRoles(...allowedRoles) {
+  return (req, res, next) => {
+    const userRole = req.user?.role;
+
+    if (!userRole || !allowedRoles.includes(userRole)) {
+      return res.status(403).json({ message: 'Access denied: role is insufficient' });
+    }
+
+    next();
+  };
+}
+
+module.exports =  {
+  authenticateUser,
+  authorizeRoles
+}
